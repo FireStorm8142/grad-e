@@ -14,7 +14,7 @@ The uncommitted changes introduce a complete frontend authentication flow integr
   - Manages `currentUser` and `loading` states.
   - Implements `loginWithGoogle` which:
     1. Triggers the Firebase Google popup sign-in.
-    2. Takes the Google user object and sends the `firebaseUid`, `email`, and `displayName` to the custom backend endpoint (`POST http://localhost:5000/api/users/login`).
+    2. Takes the Google user object and sends the `firebaseUid`, `email`, and `displayName` to the custom backend endpoint (`POST {VITE_API_URL}/api/users/login`).
     3. Handles 403 authorization rejections gracefully by signing the user out of Firebase if they don't exist in our DB.
   - Implements `logout` which signs the user out of Firebase.
   

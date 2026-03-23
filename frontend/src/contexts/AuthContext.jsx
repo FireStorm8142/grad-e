@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          const response = await fetch("http://localhost:5000/api/users/login", {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
       const user = result.user;
 
       // Now sync with our backend
-      const response = await fetch("http://localhost:5000/api/users/login", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

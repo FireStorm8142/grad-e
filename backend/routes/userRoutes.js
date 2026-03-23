@@ -61,10 +61,21 @@ router.post("/", async (req, res) => {
   }
 });
 
-// GET /api/users — List all users
+// GET /api/users — List all users with optional filtering
 router.get("/", async (req, res) => {
   try {
-    const users = await User.find().sort({ createdAt: -1 });
+    const { role, search } = req.query;
+    let query = {};
+    if (role && role !== "all") {
+      query.role = role;
+    }
+    if (search) {
+      query.$or = [
+        { email: { $regex: search, $options: "i" } },
+        { displayName: { $regex: search, $options: "i" } }
+      ];
+    }
+    const users = await User.find(query).sort({ createdAt: -1 });
     return res.json(users);
   } catch (error) {
     return res.status(500).json({ error: error.message });

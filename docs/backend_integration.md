@@ -14,7 +14,7 @@ Firebase is responsible for authentication, while MongoDB stores the user profil
 ### 2. User Model
 Located in `models/User.js`. The schema is designed around role-based access:
 - `email`: A required and unique identifier for all accounts.
-- `firebaseUid`: A sparse unique key. This remains `null` when an account is pre-created by an admin and is dynamically populated upon the user's first legitimate Google login via Firebase.
+- `firebaseUid`: A sparse unique key. This remains undefined when an account is pre-created by an admin and is dynamically populated upon the user's first legitimate Google login via Firebase.
 - `displayName`: Optional string field for the user's name.
 - `role`: Role abstraction (`student`, `teacher`, `admin`), defaulting to `student`. 
 

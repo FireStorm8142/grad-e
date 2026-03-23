@@ -5,8 +5,7 @@ const userSchema = new mongoose.Schema(
     firebaseUid: {
       type: String,
       unique: true,
-      sparse: true, // allows null until first login
-      default: null,
+      sparse: true, // allows undefined until first login
     },
     email: {
       type: String,

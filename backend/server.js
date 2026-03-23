@@ -6,6 +6,10 @@ const cors = require("cors");
 const multer = require("multer");
 const connectDB = require("./config/db");
 const userRoutes = require("./routes/userRoutes");
+const classRoutes = require("./routes/classRoutes");
+const subjectRoutes = require("./routes/subjectRoutes");
+const assignmentRoutes = require("./routes/assignmentRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,6 +22,10 @@ app.use(express.json());
 
 // Routes
 app.use("/api/users", userRoutes);
+app.use("/api/classes", classRoutes);
+app.use("/api/subjects", subjectRoutes);
+app.use("/api/assignments", assignmentRoutes);
+app.use("/api/admin", adminRoutes);
 
 const upload = multer({
   storage: multer.memoryStorage(),
