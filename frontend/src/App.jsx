@@ -16,6 +16,11 @@ import CreateExam from "./pages/CreateExam";
 import ExamDetail from "./pages/ExamDetail";
 import GradingView from "./pages/GradingView";
 
+// Student imports
+import StudentLayout from "./components/StudentLayout";
+import StudentDashboard from "./pages/StudentDashboard";
+import StudentExamResult from "./pages/StudentExamResult";
+
 function App() {
   const { currentUser } = useAuth();
 
@@ -48,6 +53,16 @@ function App() {
             <Route path="create-exam" element={<CreateExam />} />
             <Route path="exams/:id" element={<ExamDetail />} />
             <Route path="exams/:id/grade/:subId" element={<GradingView />} />
+          </Route>
+        )}
+
+        {/* Student Routes */}
+        {currentUser && currentUser.role === "student" && (
+          <Route path="/student" element={
+            <div style={{minHeight:"100vh"}}><StudentLayout /></div>
+          }>
+            <Route index element={<StudentDashboard />} />
+            <Route path="exams/:id/result/:subId" element={<StudentExamResult />} />
           </Route>
         )}
 
