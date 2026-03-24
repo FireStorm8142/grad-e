@@ -1,0 +1,121 @@
+import { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
+import { ArrowLeft, CheckCircle2, AlertCircle, Award } from "lucide-react";
+
+export default function StudentExamResult() {
+  const { id, subId } = useParams();
+  const [exam, setExam] = useState(null);
+  const [submission, setSubmission] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, [id, subId]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [exRes, subRes] = await Promise.all([
+        fetch(`${import.meta.env.VITE_API_URL}/api/exams/${id}`),
+        fetch(`${import.meta.env.VITE_API_URL}/api/exams/${id}/submissions/${subId}`)
+      ]);
+      
+      const exData = await exRes.json();
+      const subData = await subRes.json();
+
+      setExam(exData);
+      setSubmission(subData);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading || !submission || !exam) return <div style={{ padding: "40px" }}>Loading your results...</div>;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", backgroundColor: "#f8fafc" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", backgroundColor: "#fff", borderBottom: "1px solid #e2e8f0", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+          <Link to={`/student`} style={{ display: "flex", alignItems: "center", color: "#64748b", textDecoration: "none" }}>
+            <ArrowLeft size={20} /> <span style={{ marginLeft: "4px", fontWeight: "500" }}>Back to Dashboard</span>
+          </Link>
+          <div style={{ width: "1px", height: "24px", backgroundColor: "#cbd5e1" }}></div>
+          <div>
+            <div style={{ fontSize: "14px", color: "#64748b", fontWeight: "600" }}>EXAM RESULT</div>
+            <div style={{ fontSize: "18px", color: "#1e1b4b", fontWeight: "bold" }}>{exam.name} - {exam.subjectId?.name}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Split View */}
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        
+        {/* Left: PDF Viewer */}
+        <div style={{ flex: 1, borderRight: "1px solid #cbd5e1", backgroundColor: "#e2e8f0", display: "flex", flexDirection: "column" }}>
+           {submission.pdfData ? (
+             <iframe 
+               src={`data:application/pdf;base64,${submission.pdfData}`} 
+               style={{ flex: 1, border: "none", width: "100%", height: "100%" }}
+               title="My Submission"
+             />
+           ) : (
+             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}>
+               No PDF Data available.
+             </div>
+           )}
+        </div>
+
+        {/* Right: Read-Only Feedback Panel */}
+        <div style={{ width: "450px", backgroundColor: "#fff", display: "flex", flexDirection: "column", overflowY: "auto" }}>
+          <div style={{ padding: "32px 24px", borderBottom: "1px solid #e2e8f0", backgroundColor: "#f8fafc", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <Award size={40} color="#4f46e5" style={{ marginBottom: "12px" }} />
+            <div style={{ fontSize: "14px", color: "#64748b", fontWeight: "600", marginBottom: "4px", letterSpacing: "1px" }}>FINAL SCORE</div>
+            <div style={{ fontSize: "56px", fontWeight: "bold", color: "#1e1b4b", lineHeight: "1" }}>{submission.score} <span style={{ fontSize: "24px", color: "#94a3b8" }}>/{exam.totalMarks}</span></div>
+          </div>
+
+          <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "24px", backgroundColor: "#f1f5f9", flex: 1 }}>
+            {(!submission.feedback || submission.feedback.length === 0) ? (
+              <div style={{ color: "#64748b", textAlign: "center" }}>No detailed feedback generated for this submission.</div>
+            ) : (
+              submission.feedback.map((fb, idx) => (
+                <div key={idx} style={{ 
+                  borderRadius: "12px", padding: "20px",
+                  border: fb.status === "correct" ? "1px solid #34d399" : fb.status === "incorrect" ? "1px solid #f87171" : "1px solid #fbbf24",
+                  backgroundColor: "#fff", boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", paddingBottom: "12px", borderBottom: "1px solid #f1f5f9" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: "bold", color: "#334155", fontSize: "18px" }}>
+                      {fb.status === "correct" ? <CheckCircle2 size={20} color="#10b981" /> : fb.status === "incorrect" ? <AlertCircle size={20} color="#ef4444" /> : <Award size={20} color="#f59e0b" />}
+                      Question {fb.questionNumber}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
+                      <span style={{ fontSize: "24px", fontWeight: "bold", color: fb.status === "correct" ? "#10b981" : fb.status === "incorrect" ? "#ef4444" : "#f59e0b" }}>{fb.pointsAwarded}</span>
+                      <span style={{ color: "#94a3b8", fontWeight: "600", fontSize: "14px" }}>/ {fb.maxPoints} pts</span>
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: "16px" }}>
+                    <div style={{ fontSize: "12px", color: "#94a3b8", fontWeight: "600", marginBottom: "4px", textTransform: "uppercase" }}>Question Prompt</div>
+                    <div style={{ fontSize: "14px", color: "#475569", lineHeight: "1.5", padding: "12px", backgroundColor: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      {fb.prompt || "No prompt available"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: "12px", color: "#4f46e5", fontWeight: "600", marginBottom: "4px", textTransform: "uppercase" }}>Instructor Feedback</div>
+                    <div style={{ fontSize: "15px", color: "#1e293b", lineHeight: "1.6", padding: "16px", backgroundColor: "#eef2ff", borderRadius: "8px", border: "1px solid #c7d2fe" }}>
+                      {fb.teacherFeedback || "No additional feedback provided."}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

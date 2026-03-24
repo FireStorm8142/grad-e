@@ -1,117 +1,84 @@
-import React from "react";
-// import Webcam from "react-webcam";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import Home from "./pages/Home";
-import Batches from "./pages/Batches";
-import Reports from "./pages/Reports";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./contexts/AuthContext";
+import Login from "./components/Login";
+import AdminLayout from "./components/AdminLayout";
+import AdminDashboard from "./pages/AdminDashboard";
+import UserManagement from "./pages/UserManagement";
+import SubjectManagement from "./pages/SubjectManagement";
+import ClassManagement from "./pages/ClassManagement";
+import ClassDetail from "./pages/ClassDetail";
+import AssignmentManagement from "./pages/AssignmentManagement";
 
-function FooterNav() {
-  return (
-    <div className="sticky bottom-0 w-full bg-white dark:bg-[#111a22] border-t border-slate-200 dark:border-slate-800 px-6 py-3 flex justify-between items-center z-40">
-      <Link to="/" className="flex flex-col items-center gap-1 text-primary">
-        <span className="material-symbols-outlined !text-[24px]">
-          dashboard
-        </span>
-        <span className="text-[10px] font-medium">Home</span>
-      </Link>
-      <Link
-        to="/batches"
-        className="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600"
-      >
-        <span className="material-symbols-outlined !text-[24px]">
-          folder_open
-        </span>
-        <span className="text-[10px] font-medium">Batches</span>
-      </Link>
-      <Link
-        to="/reports"
-        className="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600"
-      >
-        <span className="material-symbols-outlined !text-[24px]">
-          bar_chart
-        </span>
-        <span className="text-[10px] font-medium">Reports</span>
-      </Link>
-      <Link
-        to="/settings"
-        className="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600"
-      >
-        <span className="material-symbols-outlined !text-[24px]">settings</span>
-        <span className="text-[10px] font-medium">Settings</span>
-      </Link>
-    </div>
-  );
-}
+// Teacher imports
+import TeacherLayout from "./components/TeacherLayout";
+import TeacherDashboard from "./pages/TeacherDashboard";
+import CreateExam from "./pages/CreateExam";
+import ExamDetail from "./pages/ExamDetail";
+import GradingView from "./pages/GradingView";
 
-export default function App() {
-  const [showWebcam, setShowWebcam] = React.useState(false);
-  const webcamRef = React.useRef(null);
-  const [imgSrc, setImgSrc] = React.useState(null);
+// Student imports
+import StudentLayout from "./components/StudentLayout";
+import StudentDashboard from "./pages/StudentDashboard";
+import StudentExamResult from "./pages/StudentExamResult";
 
-  const capture = React.useCallback(() => {
-    if (webcamRef.current) {
-      const imageSrc = webcamRef.current.getScreenshot();
-      setImgSrc(imageSrc);
-    }
-  }, [webcamRef, setImgSrc]);
+function App() {
+  const { currentUser } = useAuth();
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-background-light dark:bg-background-dark text-slate-900 dark:text-white transition-colors duration-200">
-        <button
-          style={{ position: 'fixed', top: 10, right: 10, zIndex: 100 }}
-          className="bg-blue-600 text-white px-4 py-2 rounded shadow"
-          onClick={() => setShowWebcam(true)}
-        >
-          Open Camera
-        </button>
-        {showWebcam && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              background: 'rgba(0,0,0,0.7)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 200,
-            }}
-          >
-            <div style={{ background: '#fff', padding: 20, borderRadius: 8, maxWidth: 420 }}>
-              <Webcam
-                audio={false}
-                ref={webcamRef}
-                screenshotFormat="image/jpeg"
-                videoConstraints={{ facingMode: 'environment' }}
-                style={{ width: '100%', maxWidth: 400 }}
-              />
-              <div className="flex gap-2 mt-2">
-                <button className="bg-green-600 text-white px-3 py-1 rounded" onClick={capture}>Capture</button>
-                <button className="bg-gray-400 text-white px-3 py-1 rounded" onClick={() => setShowWebcam(false)}>Close</button>
-              </div>
-              {imgSrc && (
-                <div className="mt-2">
-                  <h3 className="text-sm font-bold mb-1">Captured Image:</h3>
-                  <img src={imgSrc} alt="Captured" style={{ width: '100%', maxWidth: 400 }} />
-                </div>
-              )}
-            </div>
-          </div>
+      <Routes>
+        <Route 
+          path="/" 
+          element={!currentUser ? <Login /> : <Navigate to={currentUser.role === 'admin' ? '/admin' : '/dashboard'} />} 
+        />
+        
+        {/* Admin Routes */}
+        {currentUser && currentUser.role === "admin" && (
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<UserManagement />} />
+            <Route path="classes" element={<ClassManagement />} />
+            <Route path="classes/:id" element={<ClassDetail />} />
+            <Route path="subjects" element={<SubjectManagement />} />
+            <Route path="assignments" element={<AssignmentManagement />} />
+          </Route>
         )}
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/batches" element={<Batches />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <FooterNav />
-      </div>
+
+        {/* Teacher Routes */}
+        {currentUser && currentUser.role === "teacher" && (
+          <Route path="/teacher" element={
+            <div style={{minHeight:"100vh"}}><TeacherLayout /></div>
+          }>
+            <Route index element={<TeacherDashboard />} />
+            <Route path="create-exam" element={<CreateExam />} />
+            <Route path="exams/:id" element={<ExamDetail />} />
+            <Route path="exams/:id/grade/:subId" element={<GradingView />} />
+          </Route>
+        )}
+
+        {/* Student Routes */}
+        {currentUser && currentUser.role === "student" && (
+          <Route path="/student" element={
+            <div style={{minHeight:"100vh"}}><StudentLayout /></div>
+          }>
+            <Route index element={<StudentDashboard />} />
+            <Route path="exams/:id/result/:subId" element={<StudentExamResult />} />
+          </Route>
+        )}
+
+        {/* Dashboard fallback for generic users */}
+        <Route path="/dashboard" element={
+          <div style={{ padding: "20px" }}>
+            <h1>Welcome To Grad-E, {currentUser?.displayName || currentUser?.email}</h1>
+            <p>Role: {currentUser?.role}</p>
+          </div>
+        } />
+
+        {/* Catch-all or Unauthorized */}
+        <Route path="*" element={<div style={{ padding: "20px" }}>404 - Not Found or Unauthorized</div>} />
+      </Routes>
     </BrowserRouter>
   );
 }
+
+export default App;
