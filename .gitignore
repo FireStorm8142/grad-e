@@ -1,14 +1,11 @@
-# Exclusions
-
-engine/storage/uploads/*
-!engine/storage/uploads/.gitkeep
-
-
-engine/storage/reports/*.json
-
+# =========================
+# Secrets & Environment
+# =========================
 .env
 
-# Python Environment
+# =========================
+# Python & Virtual Env
+# =========================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -16,7 +13,26 @@ __pycache__/
 venv/
 ENV/
 
+# =========================
+# grad-e Dynamic Storage Files
+# =========================
+# Ignore all dynamic files and subfolders generated during runtime
+engine/storage/crops/*
+engine/storage/inputs/*
+engine/storage/local/temp_qp_pages/*
+engine/storage/reports/*
+engine/storage/uploads/*
+
+# Exception: Keep .gitkeep files so the empty directories are tracked by Git
+!engine/storage/crops/.gitkeep
+!engine/storage/inputs/.gitkeep
+!engine/storage/local/temp_qp_pages/.gitkeep
+!engine/storage/reports/.gitkeep
+!engine/storage/uploads/.gitkeep
+
+# =========================
 # IDE & OS Specific
+# =========================
 .vscode/
 .idea/
 .DS_Store
