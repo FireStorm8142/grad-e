@@ -186,19 +186,19 @@ export default function CreateExam() {
           
           <form onSubmit={handleDocumentUpload} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
             <div style={{ padding: "20px", border: "2px dashed #cbd5e1", borderRadius: "8px", textAlign: "center", backgroundColor: "#f8fafc" }}>
-              <label style={{ cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+              <label htmlFor="questionPaper" style={{ cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
                 <Upload size={32} color="#94a3b8" />
                 <span style={{ fontWeight: "600", color: "#475569" }}>Select Question Paper (PDF)</span>
-                <input type="file" accept=".pdf,application/pdf" onChange={e => setFiles({...files, questionPaper: e.target.files[0]})} style={{ display: "none" }} />
+                <input id="questionPaper" type="file" accept=".pdf,application/pdf" onChange={e => setFiles({...files, questionPaper: e.target.files[0]})} style={{ position: "absolute", opacity: 0, width: "1px", height: "1px", overflow: "hidden" }} />
                 {files.questionPaper && <span style={{ color: "#10b981", fontSize: "14px" }}>✓ {files.questionPaper.name}</span>}
               </label>
             </div>
 
             <div style={{ padding: "20px", border: "2px dashed #cbd5e1", borderRadius: "8px", textAlign: "center", backgroundColor: "#f8fafc" }}>
-              <label style={{ cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+              <label htmlFor="answerKey" style={{ cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
                 <Upload size={32} color="#94a3b8" />
                 <span style={{ fontWeight: "600", color: "#475569" }}>Select Answer Key (PDF)</span>
-                <input type="file" accept=".pdf,application/pdf" onChange={e => setFiles({...files, answerKey: e.target.files[0]})} style={{ display: "none" }} />
+                <input id="answerKey" type="file" accept=".pdf,application/pdf" onChange={e => setFiles({...files, answerKey: e.target.files[0]})} style={{ position: "absolute", opacity: 0, width: "1px", height: "1px", overflow: "hidden" }} />
                 {files.answerKey && <span style={{ color: "#10b981", fontSize: "14px" }}>✓ {files.answerKey.name}</span>}
               </label>
             </div>
