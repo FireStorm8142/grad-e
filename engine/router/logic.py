@@ -1,107 +1,135 @@
-import psutil
-import torch
-import time
-
-class Router:
-    def ___init__(self):
-        self.cloud_rate_limit_counter = 0
-        self.last_reset_time = time.time()
-        
-    def check_system_health(self):
-        if torch.cuda.is_available():
-            vram_free = torch.cuda.mem_get_info()[0] / 1024**3 # in GB
-            if vram_free < 2.0:
-                return "BUSY_LOCAL"
-        
-        if time.time() - self.last_reset_time > 60:
-            self.cloud_rate_limit_counter = 0
-            self.last_reset_time = time.time()
-            
-        if self.cloud_rate_limit_counter >= 15:
-            return "BUSY_CLOUD"
-            
-        return "AVAILABLE"
-
-    def route_request(self, local_ocr_confidence):
-        status = self.check_system_health()
-        
-import psutil
-import torch
-import time
+import json
 import os
+import traceback
+from google.genai import types
 
-class Router:
-    def __init__(self): # Fixed: Two underscores
-        self.cloud_rate_limit_counter = 0
-        self.last_reset_time = time.time()
-        self.demo_mode = True # Force Cloud for tomorrow's demo
+# Import both engines
+from engine.cloud.agents import MultiAgentGrader, extract_json
+from engine.local.pipeline import LocalPipelineManager
+
+class GradeRouter:
+    def __init__(self):
+        self.cloud_agent = MultiAgentGrader()
+        self.local_engine = LocalPipelineManager()
+
+    def setup_exam_context(self, exam_id, qp_path, ak_path):
+        """Uses Gemini to instantly generate the JSON Question Schema."""
+        print(f"🔀 [ROUTER] Routing Setup for {exam_id} to Primary Cloud Engine...")
         
-    def check_system_health(self):
-        # 1. Reset rate limit counter every minute
-        if time.time() - self.last_reset_time > 60:
-            self.cloud_rate_limit_counter = 0
-            self.last_reset_time = time.time()
+        try:
+            qp_file_obj = self.cloud_agent.upload_pdf(qp_path)
+            
+            setup_prompt = """You are an AI Data Structurer reading a university exam paper.
+            Extract every single question and format it into a JSON array.
+            RULES:
+            1. Identify Question ID.
+            2. Transcribe core text.
+            3. Identify maximum marks.
+            4. Output STRICTLY as a JSON array of objects.
+            """
 
-        # 2. Check GPU/Local Health
-        if torch.cuda.is_available():
-            try:
-                vram_free = torch.cuda.mem_get_info()[0] / 1024**3 
-                if vram_free < 2.0:
-                    return "BUSY_LOCAL"
-            except:
-                return "BUSY_LOCAL"
+            response = self.cloud_agent.safe_generate(
+                contents=[qp_file_obj, "Extract the questions into the JSON array."],
+                config=types.GenerateContentConfig(
+                    system_instruction=setup_prompt,
+                    response_mime_type="application/json"
+                ),
+                use_vision=False 
+            )
+            
+            questions_list = extract_json(response.text)
+
+            if questions_list:
+                normalized_list = []
+                for q in questions_list:
+                    normalized_list.append({
+                        "id": str(q.get("id", q.get("question_id", ""))),
+                        "context": q.get("context", q.get("question_text", "")),
+                        "max_points": float(q.get("max_points", q.get("maximum_marks", 0)))
+                    })
+                questions_list = normalized_list
+                schema_path = f"engine/storage/inputs/{exam_id}/exam_metadata.json"
+                with open(schema_path, "w") as f:
+                    json.dump({"exam_id": exam_id, "questions": questions_list}, f, indent=4)
+                    
+                print(f"✅ [ROUTER] Cloud Setup complete. Extracted {len(questions_list)} questions.")
+                return {"status": "success", "count": len(questions_list)}
+            else:
+                return {"status": "error"}
+
+        except Exception as e:
+            print(f"❌ [ROUTER ERROR] Cloud Setup Failed: {e}")
+            return {"status": "error"}
+
+    def route_and_grade(self, exam_id, student_file_paths):
+        """The Auto-Failover Circuit Breaker."""
+        print(f"\n🔀 [ROUTER] Initiating Batch Grading for {exam_id}...")
+        
+        schema_path = f"engine/storage/inputs/{exam_id}/exam_metadata.json"
+        qp_path = f"engine/storage/inputs/{exam_id}/question_paper.pdf"
+        reports_dir = f"engine/storage/reports/{exam_id}"
+        os.makedirs(reports_dir, exist_ok=True)
+        
+        if not os.path.exists(schema_path):
+            print(f"❌ [ROUTER ERROR] No setup schema found for {exam_id}.")
+            return
+            
+        with open(schema_path, "r") as f:
+            metadata = json.load(f)
+        questions_list = metadata["questions"]
+
+        ungraded_students = student_file_paths.copy()
+
+        # ==========================================
+        # PRIMARY EXECUTION: CLOUD ENGINE
+        # ==========================================
+        print(f"☁️ [ROUTER] Dispatching {len(ungraded_students)} scripts to Cloud Engine...")
+        
+        try:
+            for student_path in student_file_paths:
+                student_id = os.path.basename(student_path).replace('.pdf', '')
+                report_path = f"{reports_dir}/{student_id}_report.json"
+                
+                # Call your existing cloud workflow
+                final_report = self.cloud_agent.run_agent_workflow(student_path, qp_path)
+                
+                # Check if it returned your custom error dict or succeeded
+                if "error" in final_report:
+                    raise Exception(final_report["error"])
+                
+                # Save successful cloud report
+                with open(report_path, "w") as f:
+                    json.dump(final_report, f, indent=4)
+                    
+                print(f"✅ [CLOUD] Successfully graded {student_id}")
+                ungraded_students.remove(student_path) # Remove from queue
+
+        except Exception as e:
+            err_str = str(e).upper()
+            if "FATAL" in err_str or "EXHAUSTED" in err_str or "429" in err_str:
+                print(f"\n⚠️ [CIRCUIT BREAKER TRIPPED] Cloud API limits reached.")
+                print(f"⚠️ [ROUTER] Falling back to Local Edge Compute for remaining {len(ungraded_students)} students...")
+            else:
+                print(f"\n⚠️ [ROUTER] Unexpected Cloud Error: {e}")
+                print(f"⚠️ [ROUTER] Initiating Emergency Failover to Local Engine...")
+
+        # ==========================================
+        # SECONDARY EXECUTION: LOCAL ENGINE (FAILOVER)
+        # ==========================================
+        if ungraded_students:
+            print(f"\n💻 [ROUTER] Booting Local RTX Pipeline...")
+            
+            # Configure Local Pipeline directories for this specific exam session
+            self.local_engine.inputs_dir = f"engine/storage/inputs/{exam_id}"
+            self.local_engine.crops_dir = f"engine/storage/crops/{exam_id}"
+            self.local_engine.reports_dir = reports_dir
+            
+            os.makedirs(f"{self.local_engine.crops_dir}/golden", exist_ok=True)
+            os.makedirs(f"{self.local_engine.crops_dir}/students", exist_ok=True)
+
+            # Pass ONLY the students that the cloud failed to process
+            # (Note: You'll need to slightly update pipeline.py to accept this specific list 
+            # instead of using glob.glob() to grab everything in the folder)
+            self.local_engine.run_pipeline(questions_list, ungraded_students)
         else:
-            return "NO_LOCAL_GPU"
-            
-        # 3. Check Cloud Health
-        if self.cloud_rate_limit_counter >= 15:
-            return "BUSY_CLOUD"
-            
-        return "AVAILABLE"
-
-    def route_request(self, local_ocr_confidence=0.0):
-        """
-        Routing Hierarchy:
-        1. Low Confidence -> Must go to Cloud
-        2. Local Busy -> Try Cloud
-        3. Both Busy -> Queue
-        """
-        if self.demo_mode:
-            return "PATH_1_CLOUD" # Safety for the interim review
-
-        status = self.check_system_health()
-
-        # Rule 1: Confidence is too low for Local
-        if local_ocr_confidence < 0.60:
-            if status == "BUSY_CLOUD":
-                return "QUEUE"
-            self.cloud_rate_limit_counter += 1
-            return "PATH_1_CLOUD"
-
-        # Rule 2: Confidence is high, but Local GPU is busy
-        if status in ["BUSY_LOCAL", "NO_LOCAL_GPU"]:
-            if status == "BUSY_CLOUD":
-                return "QUEUE"
-            self.cloud_rate_limit_counter += 1
-            return "PATH_1_CLOUD"
-
-        # Rule 3: High confidence and Local is available
-        return "PATH_2_LOCAL"
-        
-        
-        if local_ocr_confidence < 0.60:
-            if status == "BUSY_CLOUD":
-                return "QUEUE" 
-            self.cloud_rate_limit_counter += 1
-            return "PATH_1_CLOUD"
-            
-
-        if status == "BUSY_LOCAL":
-             if status != "BUSY_CLOUD":
-                 self.cloud_rate_limit_counter += 1
-                 return "PATH_1_CLOUD"
-             else:
-                 return "QUEUE"
-                 
-
-        return "PATH_2_LOCAL"
+            print("\n✅ [ROUTER] Entire batch completed successfully via Cloud.")
