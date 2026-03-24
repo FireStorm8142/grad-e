@@ -10,6 +10,8 @@ const classRoutes = require("./routes/classRoutes");
 const subjectRoutes = require("./routes/subjectRoutes");
 const assignmentRoutes = require("./routes/assignmentRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const examRoutes = require("./routes/examRoutes");
+const teacherRoutes = require("./routes/teacherRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -26,6 +28,8 @@ app.use("/api/classes", classRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/assignments", assignmentRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/exams", examRoutes);
+app.use("/api/teacher", teacherRoutes);
 
 const upload = multer({
   storage: multer.memoryStorage(),

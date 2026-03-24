@@ -9,6 +9,13 @@ import ClassManagement from "./pages/ClassManagement";
 import ClassDetail from "./pages/ClassDetail";
 import AssignmentManagement from "./pages/AssignmentManagement";
 
+// Teacher imports
+import TeacherLayout from "./components/TeacherLayout";
+import TeacherDashboard from "./pages/TeacherDashboard";
+import CreateExam from "./pages/CreateExam";
+import ExamDetail from "./pages/ExamDetail";
+import GradingView from "./pages/GradingView";
+
 function App() {
   const { currentUser } = useAuth();
 
@@ -32,7 +39,19 @@ function App() {
           </Route>
         )}
 
-        {/* Dashboard fallback for non-admins (placeholder) */}
+        {/* Teacher Routes */}
+        {currentUser && currentUser.role === "teacher" && (
+          <Route path="/teacher" element={
+            <div style={{minHeight:"100vh"}}><TeacherLayout /></div>
+          }>
+            <Route index element={<TeacherDashboard />} />
+            <Route path="create-exam" element={<CreateExam />} />
+            <Route path="exams/:id" element={<ExamDetail />} />
+            <Route path="exams/:id/grade/:subId" element={<GradingView />} />
+          </Route>
+        )}
+
+        {/* Dashboard fallback for generic users */}
         <Route path="/dashboard" element={
           <div style={{ padding: "20px" }}>
             <h1>Welcome To Grad-E, {currentUser?.displayName || currentUser?.email}</h1>
