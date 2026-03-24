@@ -279,7 +279,8 @@ body,
 }
 
 .teacher-dashboard {
-  padding: clamp(14px, 2vw, 22px) clamp(14px, 2.2vw, 24px) clamp(22px, 3vw, 34px);
+  padding: clamp(14px, 2vw, 22px) clamp(14px, 2.2vw, 24px)
+    clamp(22px, 3vw, 34px);
   animation: rise-in 0.55s ease;
 }
 
