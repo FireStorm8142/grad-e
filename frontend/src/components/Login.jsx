@@ -51,7 +51,10 @@ const Login = () => {
       <div className="login-content">
         <div className="login-card">
           <div className="login-header">
-            <div className="logo-icon">📚</div>
+            <div className="brand-mark" aria-hidden="true">
+              <span></span>
+              <span></span>
+            </div>
             <h1 className="title">Grade-E</h1>
             <p className="subtitle">YOUR AI GRADING ASSISTANT</p>
           </div>

@@ -44,14 +44,16 @@
 
 /* Login card styling */
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border: 2px solid #3b82f6;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 18px;
   padding: 60px 40px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 20px 60px rgba(59, 130, 246, 0.2);
+  box-shadow:
+    0 20px 48px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
   text-align: center;
   animation: slideUp 0.6s ease-out;
 }
@@ -67,27 +69,49 @@
   }
 }
 
-/* Logo and header */
-.logo-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  display: inline-block;
+/* Brand mark and header */
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  margin: 0 auto 16px;
+  border: 1px solid rgba(46, 86, 190, 0.28);
+  background: linear-gradient(145deg, #ffffff 0%, #f4f7fc 100%);
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.brand-mark span {
+  position: absolute;
+  width: 14px;
+  height: 2px;
+  border-radius: 99px;
+  background: var(--accent-strong, #2e56be);
+}
+
+.brand-mark span:first-child {
+  transform: rotate(40deg);
+}
+
+.brand-mark span:last-child {
+  transform: rotate(-40deg);
 }
 
 .title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: 34px;
+  font-weight: 800;
+  color: #1b2430;
   margin: 12px 0;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.04em;
 }
 
 .subtitle {
-  font-size: 12px;
-  letter-spacing: 2px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
   color: #6b7280;
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -118,12 +142,12 @@
 .google-login-btn {
   width: 100%;
   padding: 14px 24px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #2f4fa6 0%, #233f8a 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -152,12 +176,12 @@
 
 .google-login-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 12px 24px rgba(35, 63, 138, 0.38);
 }
 
 .google-login-btn:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 5px 14px rgba(35, 63, 138, 0.28);
 }
 
 .google-login-btn:disabled {
@@ -192,8 +216,9 @@
     font-size: 28px;
   }
 
-  .logo-icon {
-    font-size: 40px;
+  .brand-mark {
+    width: 36px;
+    height: 36px;
   }
 
   .blur-background {
