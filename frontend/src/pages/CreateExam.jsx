@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
 import { AnimatePresence, motion } from "framer-motion";
-import { Upload, CheckCircle2, FileText, Bot } from "lucide-react";
+import { FileText, Save, PlayCircle, Settings, X, Plus } from "lucide-react";
 
 export default function CreateExam() {
   const { currentUser } = useAuth();
@@ -73,7 +74,7 @@ export default function CreateExam() {
         }, 1150);
       } else {
         const err = await res.json();
-        alert(err.error || "Failed to create exam");
+        toast.error(err.error || "Failed to create exam");
       }
     } catch (error) {
       console.error(error);
@@ -85,7 +86,7 @@ export default function CreateExam() {
   const handleDocumentUpload = async (e) => {
     e.preventDefault();
     if (!files.questionPaper || !files.answerKey) {
-      alert("Please select both question paper and answer key PDFs.");
+      toast.error("Please select both question paper and answer key PDFs.");
       return;
     }
 
@@ -104,7 +105,7 @@ export default function CreateExam() {
         setCriteria(data);
       } else {
         const err = await res.json();
-        alert(err.error || "Generation failed.");
+        toast.error(err.error || "Generation failed.");
       }
     } catch (error) {
       console.error(error);

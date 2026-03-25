@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   AlertTriangle,
   ArrowLeft,
   BarChart3,
   CheckCircle2,
   Eye,
+  FileText,
+  Grid as GridIcon,
+  PlayCircle,
+  Plus,
   Play,
   Settings,
   Upload,
@@ -373,7 +378,7 @@ function AnswerSheetsTab({ exam, fetchExam }) {
                     transition={{ duration: 0.18, delay: idx * 0.03 }}
                     style={{ borderTop: idx === 0 ? "none" : "1px solid var(--line)" }}
                   >
-                    <td style={{ padding: "12px 14px", fontWeight: 600, color: "#364153" }}>calc_mid_{String(idx + 1).padStart(3, "0")}.pdf</td>
+                    <td style={{ padding: "12px 14px", fontWeight: 600, color: "#364153" }}>{sub.fileName || `calc_mid_${String(idx + 1).padStart(3, "0")}.pdf`}</td>
                     <td style={{ padding: "12px 14px" }}>
                       {sub.studentId ? (
                         <span style={{ color: "var(--ink)", fontWeight: 600 }}>
@@ -474,7 +479,7 @@ function SeatingTab({ exam, fetchExam }) {
       const assignedIds = new Set(next.map((a) => a.studentId));
       const unassignedStudent = classStudents.find((s) => !assignedIds.has(s._id));
       if (!unassignedStudent) {
-        alert("All class students currently enrolled are assigned to seats.");
+        toast.error("All class students currently enrolled are assigned to seats.");
         return;
       }
       next.push({ row: r, col: c, studentId: unassignedStudent._id, studentDetails: unassignedStudent });
@@ -485,13 +490,15 @@ function SeatingTab({ exam, fetchExam }) {
 
   const saveSeating = async () => {
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/exams/${exam._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/exams/${exam._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seatingArrangement: { rows, cols, assignments } }),
       });
-      alert("Seating layout saved!");
-      fetchExam();
+      if (res.ok) {
+        toast.success("Seating layout saved!");
+        fetchExam();
+      }
     } catch (e) {
       console.error(e);
     }

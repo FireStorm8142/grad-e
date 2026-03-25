@@ -1,18 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import { Ban, Pencil, Search, UserPlus } from "lucide-react";
+import { Ban, Pencil, Search, UserPlus, FileEdit, Trash2, X, UserPlus } from "lucide-react";
 
 export default function UserManagement() {
   const [activeTab, setActiveTab] = useState("teacher");
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [editingUserId, setEditingUserId] = useState(null);
+  
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+
+  // Modals state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    role: "teacher",
+    role: "student"
   });
 
   useEffect(() => {
@@ -34,38 +44,85 @@ export default function UserManagement() {
     }
   };
 
-  const handleAddUser = async (e) => {
+  const handleSaveUser = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          role: formData.role,
-          displayName: formData.name,
-        }),
-      });
-      if (res.ok) {
-        setIsModalOpen(false);
-        setFormData({ name: "", email: "", role: activeTab });
-        fetchUsers();
+      if (editingUserId) {
+        // Edit User
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${editingUserId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: formData.role }) 
+        });
+        if (res.ok) {
+          setIsModalOpen(false);
+          setEditingUserId(null);
+          toast.success("User updated successfully");
+          fetchUsers();
+        } else {
+          const error = await res.json();
+          toast.error(error.error || "Failed to update user");
+        }
       } else {
-        const error = await res.json();
-        alert(error.error || "Failed to create user");
+        // Add User
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: formData.email,
+            role: formData.role,
+            displayName: formData.name,
+          }),
+        });
+        if (res.ok) {
+          setIsModalOpen(false);
+          setFormData({ name: "", email: "", role: activeTab });
+          toast.success("User created successfully");
+          fetchUsers();
+        } else {
+          const error = await res.json();
+          toast.error(error.error || "Failed to create user");
+        }
       }
     } catch (error) {
       console.error(error);
+      toast.error("An error occurred");
     }
+  };
+
+  const openAddModal = () => {
+    setEditingUserId(null);
+    setFormData({ email: "", role: activeTab });
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (user) => {
+    setEditingUserId(user._id);
+    setFormData({ email: user.email, role: user.role });
+    setIsModalOpen(true);
+  };
+
+  const openDeleteModal = (id) => {
+    setUserToDelete(id);
+    setIsDeleteModalOpen(true);
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${id}`, { method: "DELETE" });
-      if (res.ok) fetchUsers();
+      if (res.ok) {
+        toast.success("User deleted successfully");
+        setIsDeleteModalOpen(false);
+        setUserToDelete(null);
+        fetchUsers();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Failed to delete user");
+      }
     } catch (error) {
       console.error(error);
+      toast.error("An error occurred");
     }
   };
 
@@ -95,10 +152,7 @@ export default function UserManagement() {
         </div>
 
         <button
-          onClick={() => {
-            setFormData((prev) => ({ ...prev, role: activeTab }));
-            setIsModalOpen(true);
-          }}
+          onClick={openAddModal}
           style={{
             border: "none",
             background: "var(--accent-strong)",
@@ -113,7 +167,7 @@ export default function UserManagement() {
             boxShadow: "0 10px 20px rgba(46, 86, 190, 0.24)",
           }}
         >
-          <UserPlus size={16} /> Add User
+          <UserPlus size={18} /> Add User
         </button>
       </motion.header>
 
@@ -288,6 +342,7 @@ export default function UserManagement() {
                         <button
                           type="button"
                           title="Edit"
+                          onClick={() => openEditModal(u)}
                           style={{ border: 0, background: "transparent", cursor: "pointer", color: "#5f6b79" }}
                         >
                           <Pencil size={14} />
@@ -295,7 +350,7 @@ export default function UserManagement() {
                         <button
                           type="button"
                           title="Delete"
-                          onClick={() => handleDelete(u._id)}
+                          onClick={() => openDeleteModal(u._id)}
                           style={{ border: 0, background: "transparent", cursor: "pointer", color: "#c94949" }}
                         >
                           <Ban size={14} />
@@ -319,6 +374,7 @@ export default function UserManagement() {
         </div>
       </motion.div>
 
+      {/* Add / Edit Modal */}
       {isModalOpen && (
         <div
           style={{
@@ -337,24 +393,30 @@ export default function UserManagement() {
             transition={{ duration: 0.2 }}
             style={{ width: "min(420px, 100%)", borderRadius: 16, background: "#fff", border: "1px solid var(--line)", padding: 20 }}
           >
-            <h2 style={{ margin: "0 0 14px", fontSize: 22, color: "#252d39" }}>Add {formData.role}</h2>
-            <form onSubmit={handleAddUser} style={{ display: "grid", gap: 12 }}>
-              <input
-                type="text"
-                placeholder="Display name"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                style={{ height: 40, borderRadius: 10, border: "1px solid #d7dce4", padding: "0 12px" }}
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                style={{ height: 40, borderRadius: 10, border: "1px solid #d7dce4", padding: "0 12px" }}
-              />
+            <h2 style={{ margin: "0 0 14px", fontSize: 22, color: "#252d39" }}>
+              {editingUserId ? "Edit" : "Add"} {formData.role}
+            </h2>
+            <form onSubmit={handleSaveUser} style={{ display: "grid", gap: 12 }}>
+              {!editingUserId && (
+                <input
+                  type="text"
+                  placeholder="Display name"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  style={{ height: 40, borderRadius: 10, border: "1px solid #d7dce4", padding: "0 12px" }}
+                />
+              )}
+              {!editingUserId && (
+                <input
+                  type="email"
+                  placeholder="Email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  style={{ height: 40, borderRadius: 10, border: "1px solid #d7dce4", padding: "0 12px" }}
+                />
+              )}
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 4 }}>
                 <button
@@ -368,7 +430,7 @@ export default function UserManagement() {
                   type="submit"
                   style={{ border: 0, borderRadius: 10, background: "var(--accent-strong)", color: "#fff", padding: "8px 13px", cursor: "pointer", fontWeight: 700 }}
                 >
-                  Save User
+                  {editingUserId ? "Update" : "Save"} User
                 </button>
               </div>
             </form>

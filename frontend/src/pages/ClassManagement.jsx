@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import { GraduationCap, Plus, Search, Users } from "lucide-react";
+import { Users, <GraduationCap></GraduationCap>, Plus, Plus, Search, Users } from "lucide-react";
 
 export default function ClassManagement() {
   const [classes, setClasses] = useState([]);
@@ -40,7 +41,7 @@ export default function ClassManagement() {
         fetchClasses();
       } else {
         const err = await res.json();
-        alert(err.error || "Failed to create class");
+        toast.error(err.error || "Failed to save class");
       }
     } catch (error) {
       console.error(error);

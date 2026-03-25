@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import { ClipboardList, Plus } from "lucide-react";
+import { Link, Briefcase, Plus, X } from "lucide-react";
 
 export default function AssignmentManagement() {
   const [assignments, setAssignments] = useState([]);
@@ -51,7 +52,7 @@ export default function AssignmentManagement() {
         fetchData();
       } else {
         const err = await res.json();
-        alert(err.error || "Failed to create assignment");
+        toast.error(err.error || "Failed to create assignment");
       }
     } catch (error) {
       console.error(error);
