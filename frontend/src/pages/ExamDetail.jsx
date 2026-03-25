@@ -250,15 +250,47 @@ function AnswerSheetsTab({ exam, fetchExam }) {
     }
   };
 
+  const [gradeProgress, setGradeProgress] = useState(null); // { graded, total }
+
   const handleProcess = async () => {
     setProcessing(true);
-    await fetch(`${import.meta.env.VITE_API_URL}/api/exams/${exam._id}/grade-all`, { method: "POST" });
-    fetchExam();
-    setTimeout(() => {
-      fetchSubmissions();
+    setGradeProgress(null);
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/exams/${exam._id}/grade-all`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Failed to start grading.");
+        setProcessing(false);
+        return;
+      }
+      toast.success("AI grading started! This may take a few minutes...");
       fetchExam();
+
+      // Start polling for grading progress
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusRes = await fetch(`${import.meta.env.VITE_API_URL}/api/exams/${exam._id}/grade-status`);
+          const statusData = await statusRes.json();
+          setGradeProgress({ graded: statusData.graded, total: statusData.total });
+
+          if (statusData.status === "completed") {
+            clearInterval(pollInterval);
+            toast.success("All papers graded successfully!");
+            fetchSubmissions();
+            fetchExam();
+            setProcessing(false);
+            setGradeProgress(null);
+          }
+        } catch (e) {
+          console.error("Polling error:", e);
+        }
+      }, 8000);
+    } catch (err) {
+      console.error(err);
+      toast.error("Error dispatching grading.");
       setProcessing(false);
-    }, 3500);
+    }
   };
 
   const unassigned = submissions.filter((s) => !s.studentId).length;
@@ -348,7 +380,13 @@ function AnswerSheetsTab({ exam, fetchExam }) {
               }}
             >
               <Play size={16} />
-              {processing ? "Processing..." : exam.status === "Graded" ? "Grading Complete" : "Process Papers"}
+              {processing
+                ? gradeProgress
+                  ? `Grading ${gradeProgress.graded}/${gradeProgress.total}...`
+                  : "Dispatching to AI..."
+                : exam.status === "Graded"
+                  ? "Grading Complete"
+                  : "Process Papers"}
             </button>
           </div>
         </div>
