@@ -7,13 +7,7 @@ export default function UserManagement() {
   const [activeTab, setActiveTab] = useState("teacher");
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUserId, setEditingUserId] = useState(null);
-  
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState(null);
-
-  // Modals state
+  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -92,13 +86,13 @@ export default function UserManagement() {
 
   const openAddModal = () => {
     setEditingUserId(null);
-    setFormData({ email: "", role: activeTab });
+    setFormData({ name: "", email: "", role: activeTab });
     setIsModalOpen(true);
   };
 
   const openEditModal = (user) => {
     setEditingUserId(user._id);
-    setFormData({ email: user.email, role: user.role });
+    setFormData({ name: user.displayName || "", email: user.email, role: user.role });
     setIsModalOpen(true);
   };
 
