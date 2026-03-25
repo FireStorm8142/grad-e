@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import gsap from "gsap";
+import "./Login.css";
 
 const Login = () => {
   const { loginWithGoogle } = useAuth();
@@ -42,60 +43,34 @@ const Login = () => {
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="relative min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-300 overflow-hidden font-sans"
-    >
+    <div className="login-container" ref={containerRef}>
       {/* Cursor-following blur background */}
-      <div
-        ref={blurBgRef}
-        className="fixed w-80 h-80 pointer-events-none z-10"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, rgba(59, 130, 246, 0.1) 70%, transparent 100%)",
-          filter: "blur(60px)",
-          borderRadius: "50%",
-        }}
-      ></div>
+      <div className="blur-background" ref={blurBgRef}></div>
 
       {/* Main content */}
-      <div className="relative z-20 w-full flex items-center justify-center px-5">
-        <div className="w-full max-w-sm bg-white/95 backdrop-blur-lg border-2 border-blue-500 rounded-2xl p-16 shadow-2xl text-center animate-slidein">
-          {/* Header */}
-          <div className="mb-6">
-            <div className="text-6xl mb-4 inline-block">📚</div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-3 tracking-tight">
-              Grade-E
-            </h1>
-            <p className="text-xs tracking-widest text-gray-500 font-semibold uppercase">
-              YOUR AI GRADING ASSISTANT
-            </p>
+      <div className="login-content">
+        <div className="login-card">
+          <div className="login-header">
+            <div className="logo-icon">📚</div>
+            <h1 className="title">Grade-E</h1>
+            <p className="subtitle">YOUR AI GRADING ASSISTANT</p>
           </div>
 
-          {/* Description */}
-          <div className="mb-8 text-gray-600 text-sm leading-relaxed">
+          <div className="login-description">
             <p>
-              Access your personalized grading dashboard and streamline your academic
-              workflow.
+              Access your personalized grading dashboard and streamline your academic workflow.
             </p>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-5 bg-red-50 text-red-600 px-3 py-3 rounded-lg text-sm border-l-4 border-red-600">
-              {error}
-            </div>
-          )}
+          {error && <div className="error-message">{error}</div>}
 
-          {/* Google Login Button */}
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full py-4 px-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-semibold rounded-lg flex items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl active:translate-y-0 active:shadow-lg mb-6 relative overflow-hidden group"
+            className="google-login-btn"
           >
-            <span className="absolute left-0 top-0 w-full h-full bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-300"></span>
             <svg
-              className="flex-shrink-0 w-5 h-5 relative z-10"
+              className="google-icon"
               viewBox="0 0 24 24"
               width="20"
               height="20"
@@ -117,39 +92,12 @@ const Login = () => {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            <span className="relative z-10">
-              {loading ? "Signing in..." : "Sign in with Google"}
-            </span>
+            {loading ? "Signing in..." : "Sign in with Google"}
           </button>
 
-          {/* Security Note */}
-          <div className="text-xs tracking-wider text-gray-400 font-semibold uppercase pt-4 border-t border-gray-200">
-            SECURE GATEWAY
-          </div>
+          <div className="security-note">SECURE GATEWAY</div>
         </div>
       </div>
-
-      {/* Add animation keyframes via style tag */}
-      <style>{`
-        @keyframes slidein {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-slidein {
-          animation: slidein 0.6s ease-out;
-        }
-        @media (max-width: 480px) {
-          .animate-slidein {
-            padding: 2.5rem 1.5rem;
-          }
-        }
-      `}</style>
     </div>
   );
 };
