@@ -1,6 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, AlertCircle, Award } from "lucide-react";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 export default function StudentExamResult() {
   const { id, subId } = useParams();
@@ -32,6 +37,14 @@ export default function StudentExamResult() {
     }
   };
 
+  const [numPages, setNumPages] = useState(null);
+  const pdfFile = useMemo(() => {
+    if (submission?.pdfData) {
+      return `data:application/pdf;base64,${submission.pdfData}`;
+    }
+    return null;
+  }, [submission?.pdfData]);
+
   if (loading || !submission || !exam) return <div style={{ padding: "40px" }}>Loading your results...</div>;
 
   return (
@@ -54,18 +67,23 @@ export default function StudentExamResult() {
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         
         {/* Left: PDF Viewer */}
-        <div style={{ flex: 1, borderRight: "1px solid #cbd5e1", backgroundColor: "#e2e8f0", display: "flex", flexDirection: "column" }}>
-           {submission.pdfData ? (
-             <iframe 
-               src={`data:application/pdf;base64,${submission.pdfData}`} 
-               style={{ flex: 1, border: "none", width: "100%", height: "100%" }}
-               title="My Submission"
-             />
-           ) : (
-             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}>
-               No PDF Data available.
-             </div>
-           )}
+        <div style={{ flex: 1, borderRight: "1px solid #cbd5e1", backgroundColor: "#e2e8f0", display: "flex", flexDirection: "column", overflow: "auto" }}>
+          {pdfFile ? (
+            <Document
+              file={pdfFile}
+              onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+              loading={<div style={{ textAlign: "center", marginTop: 40 }}>Loading PDF...</div>}
+              error={<div style={{ color: "#e53e3e", textAlign: "center", marginTop: 40 }}>Failed to load PDF.</div>}
+            >
+              {Array.from(new Array(numPages), (el, index) => (
+                <Page key={`page_${index + 1}`} pageNumber={index + 1} width={600} />
+              ))}
+            </Document>
+          ) : (
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}>
+              No PDF Data available.
+            </div>
+          )}
         </div>
 
         {/* Right: Read-Only Feedback Panel */}
